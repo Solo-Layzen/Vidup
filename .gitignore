@@ -1,0 +1,26 @@
+# Dépendances
+node_modules/
+
+# Environnement
+.env
+.env.local
+.env.production
+
+# Build
+.next/
+out/
+dist/
+# Dossier temporaire du build statique (app/api mis de côté)
+app/_api_statique_desactive/
+
+# Prisma
+prisma/dev.db
+prisma/*.db-journal
+
+# Divers
+.DS_Store
+*.log
+npm-debug.log*
+.vercel
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,28 @@
+# Blueprint Render — API de téléchargement (yt-dlp + ffmpeg).
+#
+# Le front statique reste sur InfinityFree : ce service ne sert que l'API.
+# Déploiement : Render Dashboard → New → Blueprint → sélectionner ce dépôt.
+#
+# Plan gratuit : 512 Mo de RAM, 0,1 CPU, mise en veille après 15 min
+# d'inactivité (le premier appel suivant peut prendre ~50 s).
+services:
+  - type: web
+    name: vidup-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # Relais de secours si l'API Deezer bloque l'IP du serveur.
+      - key: DEEZER_PROXY
+        value: https://r.jina.ai/
+      # Fichier de cookies YouTube (optionnel). À renseigner dans le dashboard
+      # Render (Environment → Secret File) puis à indiquer ici, ou laisser vide.
+      - key: YTDLP_COOKIES
+        sync: false

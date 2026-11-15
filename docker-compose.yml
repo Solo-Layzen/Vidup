@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      YTDLP_COOKIES: ${YTDLP_COOKIES:-}
+      DEEZER_PROXY: ${DEEZER_PROXY:-}
