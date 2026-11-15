@@ -72,7 +72,10 @@ async function getYtdlpVersion(): Promise<string | null> {
 
 export async function GET() {
   if (cached && Date.now() - cached.time < CACHE_TTL_MS) {
-    return NextResponse.json(cached.payload, { status: cached.status });
+    return NextResponse.json(cached.payload, {
+      status: cached.status,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   const [ytdlp, ffmpeg] = await Promise.all([
