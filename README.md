@@ -48,7 +48,8 @@ Le format ZIP standard est limité à **4 Go** : pour de très grosses playlists
 
 > ⚠️ **Déploiement** : yt-dlp a besoin d'un accès système (spawn de processus).
 > **Pas de Vercel serverless seul, pas d'hébergement PHP mutualisé.** Utiliser
-> **Railway**, **Render**, un **VPS** ou **Docker**.
+> un **PC perso (Ubuntu + Tailscale Funnel)**, **Render**, **Railway**, un
+> **VPS** ou **Docker**.
 
 ## Installation locale
 
@@ -101,6 +102,106 @@ ffmpeg -version
 docker compose up --build
 ```
 Le `Dockerfile` installe automatiquement yt-dlp et ffmpeg.
+
+## 🏠 Héberger l'API chez soi — Ubuntu + Tailscale Funnel (gratuit, sans carte)
+
+C'est la solution sans carte bancaire : l'API tourne sur ton PC Ubuntu (celui de
+Nextcloud) et devient accessible publiquement via **Tailscale Funnel**, avec une
+**URL fixe** et HTTPS. Aucun port à ouvrir sur la box, aucune carte bancaire.
+
+Avantages : pas de limite de durée, pas de mise en veille, 4K/8K possibles,
+IP résidentielle (YouTube bloque moins), yt-dlp déjà à jour.
+Contrainte : **le PC doit rester allumé** (ce qui est déjà le cas pour Nextcloud).
+
+### 1. Installer Docker sur l'Ubuntu
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+newgrp docker          # ou se déconnecter/reconnecter
+docker --version
+```
+
+### 2. Récupérer le projet
+
+Le dépôt GitHub est privé. Le plus simple : GitHub → dépôt **Vidup** →
+**Settings** → **General** → tout en bas **Change visibility** → **Public**
+(le projet ne contient aucun secret, `.env` est ignoré). Puis :
+
+```bash
+sudo apt install -y git
+git clone https://github.com/Solo-Layzen/Vidup.git
+cd Vidup
+```
+
+*(Dépôt privé : `git clone https://<TOKEN>@github.com/Solo-Layzen/Vidup.git` avec
+un token GitHub `repo`.)*
+
+### 3. Lancer l'API
+
+```bash
+docker compose up -d --build      # 5 à 10 min la première fois
+docker compose ps                 # le service doit être "healthy"
+curl http://127.0.0.1:3000/api/health
+```
+
+Attendu : `"ok":true` avec les versions de `ytdlp` et `ffmpeg` (le `Dockerfile`
+les installe). L'API n'écoute que sur `127.0.0.1` : rien n'est exposé pour
+l'instant.
+
+### 4. Exposer l'API avec Tailscale Funnel
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+sudo tailscale funnel 3000
+```
+
+Au premier lancement, Tailscale affiche un lien : ouvre-le et active **Funnel**
++ **HTTPS certificates** dans la console d'administration Tailscale. Relance
+ensuite la commande. Elle affiche l'URL publique, du type :
+
+```
+https://mon-pc.tailXXXX.ts.net
+```
+
+Teste-la **depuis ton téléphone en 4G** :
+`https://mon-pc.tailXXXX.ts.net/api/health` → `"ok":true`.
+
+> Cette URL ne change pas après un redémarrage. `tailscale funnel status`
+> permet de vérifier que le tunnel est actif.
+
+### 5. Brancher le site InfinityFree
+
+Sur **Windows**, reconstruis le front avec cette URL :
+
+```powershell
+$env:NEXT_PUBLIC_API_BASE="https://mon-pc.tailXXXX.ts.net"
+npm.cmd run build:static
+```
+
+Puis upload le contenu de `out/` dans `htdocs` sur InfinityFree.
+
+### 6. Garder le service en route
+
+- Docker redémarre l'API tout seul (`restart: unless-stopped`) et Tailscale
+  démarre avec le système. Après un reboot : `docker compose ps` puis
+  `tailscale funnel status`.
+- Empêcher la mise en veille du PC :
+  ```bash
+  sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+  ```
+- Mettre à jour yt-dlp quand YouTube change (une fois par mois, ou en cas
+  d'erreur « format indisponible ») :
+  ```bash
+  cd ~/Vidup && docker compose build --no-cache && docker compose up -d
+  ```
+
+> ⚠️ L'API est publique : n'importe qui ayant l'URL peut télécharger (limite
+> technique de 20 requêtes/min/IP). Pour un usage strictement personnel, tu
+> peux remplacer `tailscale funnel` par `tailscale serve` (accessible uniquement
+> depuis tes appareils Tailscale), mais le site InfinityFree ne pourra alors
+> plus l'appeler.
 
 ## 🚀 Déployer l'API sur Render (pas à pas)
 
@@ -216,8 +317,12 @@ téléchargeur seul.
 
 La solution qui fonctionne réellement :
 
-1. **Héberger l'API sur un serveur Node** — voir « Déployer l'API sur Render »
-   ci-dessus. Noter son URL HTTPS, par exemple `https://vidup-api.onrender.com`.
+1. **Héberger l'API sur un serveur Node** — deux options :
+   - **PC perso Ubuntu + Tailscale Funnel** (gratuit, sans carte) : voir
+     « Héberger l'API chez soi » ci-dessus ;
+   - **Render** (carte bancaire demandée pour vérifier le compte) : voir
+     « Déployer l'API sur Render ».
+   Noter l'URL HTTPS obtenue, par exemple `https://mon-pc.tailXXXX.ts.net`.
 2. **Construire le front statique** en indiquant cette URL :
    ```powershell
    $env:NEXT_PUBLIC_API_BASE="https://vidup-api.onrender.com"

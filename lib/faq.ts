@@ -44,7 +44,12 @@ export const FAQ: FaqItem[] = [
   {
     question: "Le site peut-il fonctionner sur InfinityFree ?",
     answer:
-      "InfinityFree propose PHP 8.4 et MySQL, mais pas Node.js, ni l'exécution de binaires comme yt-dlp et ffmpeg. L'interface peut y être hébergée en version statique (npm run build:static → dossier out/ à uploader dans htdocs), mais l'API de téléchargement doit tourner sur un serveur Node : Railway, Render, VPS ou Docker. Sans ce serveur, l'interface s'affiche mais les téléchargements ne peuvent pas fonctionner. Voir la section « Déploiement InfinityFree » du README.",
+      "InfinityFree propose PHP 8.4 et MySQL, mais pas Node.js, ni l'exécution de binaires comme yt-dlp et ffmpeg. L'interface peut y être hébergée en version statique (npm run build:static → dossier out/ à uploader dans htdocs), mais l'API de téléchargement doit tourner sur un serveur Node : un PC perso (Ubuntu + Tailscale Funnel, gratuit et sans carte), Render, un VPS ou Docker. Sans ce serveur, l'interface s'affiche mais les téléchargements ne peuvent pas fonctionner. Voir la section « Déploiement InfinityFree » du README.",
+  },
+  {
+    question: "Je n'ai pas de carte bancaire, comment héberger l'API gratuitement ?",
+    answer:
+      "La plupart des hébergeurs cloud (Render, Railway, Fly.io…) demandent une carte pour vérifier le compte. La solution sans carte : faire tourner l'API sur un PC chez soi et l'exposer avec Tailscale Funnel (gratuit), qui fournit une URL HTTPS fixe du type https://mon-pc.tailXXXX.ts.net. Il suffit d'installer Docker sur un PC Ubuntu, de lancer docker compose up -d --build, puis sudo tailscale funnel 3000. Le PC doit rester allumé pendant les téléchargements. Avantage : pas de mise en veille, 4K/8K possibles et une meilleure acceptation par YouTube.",
   },
   {
     question: "Pourquoi le premier téléchargement met-il 30 à 60 secondes ?",
